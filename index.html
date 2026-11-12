@@ -3,102 +3,80 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>求籤・六十甲子籤</title>
+<title>求籤</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/" } }</script>
 <style>
-  :root{
-    --red:#8e1b16; --red-d:#5a0f0c; --gold:#e7c26b; --gold-d:#b48a35;
-    --paper:#f4e3b5; --ink:#3a1a10;
-  }
+  :root{ --gold:#e7c26b; --ink:#3a1a10; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
   body{
+    height:100dvh;
     font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;
     color:var(--gold);
     background:
-      radial-gradient(ellipse 70% 45% at 50% 38%, rgba(255,170,80,.22), transparent 70%),
-      radial-gradient(ellipse at 50% 120%, #2a0705 0%, transparent 60%),
+      radial-gradient(ellipse 75% 50% at 50% 40%, rgba(255,170,80,.20), transparent 70%),
       linear-gradient(180deg,#4a0b08 0%, #6d1410 45%, #3a0806 100%);
     overflow:hidden; user-select:none; -webkit-user-select:none;
     display:flex; flex-direction:column; align-items:center;
   }
-  /* 香煙 */
   .smoke{position:fixed;inset:0;pointer-events:none;overflow:hidden;opacity:.5}
   .smoke i{position:absolute;bottom:-120px;width:180px;height:260px;border-radius:50%;
-    background:radial-gradient(closest-side,rgba(255,240,220,.18),transparent);filter:blur(18px);
+    background:radial-gradient(closest-side,rgba(255,240,220,.16),transparent);filter:blur(18px);
     animation:rise 14s linear infinite}
-  .smoke i:nth-child(1){left:8%;animation-delay:0s}
+  .smoke i:nth-child(1){left:8%}
   .smoke i:nth-child(2){left:62%;animation-delay:-5s;animation-duration:17s}
   .smoke i:nth-child(3){left:35%;animation-delay:-10s;animation-duration:20s}
   @keyframes rise{0%{transform:translateY(0) scale(.7);opacity:0}15%{opacity:1}100%{transform:translateY(-120vh) translateX(40px) scale(1.6);opacity:0}}
 
-  header{position:relative;width:100%;max-width:520px;text-align:center;padding:max(14px,env(safe-area-inset-top)) 16px 0}
-  h1{margin:6px 0 0;font-weight:900;font-size:30px;letter-spacing:.5em;text-indent:.5em;
+  header{position:relative;z-index:2;width:100%;max-width:520px;text-align:center;padding:max(10px,env(safe-area-inset-top)) 16px 0}
+  h1{margin:4px 0 0;font-weight:900;font-size:26px;letter-spacing:.5em;text-indent:.5em;
      color:var(--gold);text-shadow:0 2px 0 #3a0705,0 0 18px rgba(231,194,107,.35)}
-  .sub{font-size:13px;letter-spacing:.3em;opacity:.75;margin-top:2px}
-  .mute{position:absolute;right:14px;top:max(14px,env(safe-area-inset-top));width:36px;height:36px;border-radius:50%;
+  .sub{font-size:12px;letter-spacing:.3em;opacity:.75}
+  .mute{position:absolute;right:14px;top:max(10px,env(safe-area-inset-top));width:36px;height:36px;border-radius:50%;
         border:1px solid rgba(231,194,107,.5);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;cursor:pointer}
 
-  .stageWrap{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
-  .stage{position:relative;width:320px;height:460px;transform-origin:center center}
-  .floor{position:absolute;left:-20px;right:-20px;bottom:6px;height:40px;border-radius:50%;
-         background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent)}
+  .stageWrap{flex:1;width:100%;position:relative;min-height:0}
+  #scene{position:absolute;inset:0;width:100%;height:100%;display:block}
 
-  .holder{position:absolute;left:85px;top:36px;width:150px;height:404px;transform-origin:50% 96%;will-change:transform}
-  .rimBack{position:absolute;left:0;top:114px;width:150px;height:40px}
-  .sticks{position:absolute;left:15px;top:0;width:120px;height:190px}
-  .stick{position:absolute;bottom:0;width:9px;border-radius:3px 3px 1px 1px;
-    background:linear-gradient(90deg,#c9a062,#ecd29b 45%,#d3ad6c);
-    box-shadow:inset -1px 0 0 rgba(0,0,0,.15);
-    transform-origin:50% 100%;transition:transform 70ms linear}
-  .stick::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:3px 3px 0 0;
-    background:linear-gradient(90deg,#9b1c14,#c8342a 50%,#9b1c14)}
-  .stick.lead{z-index:5;transition:transform 90ms ease-out}
-  .tube{position:absolute;left:0;top:114px;width:150px;height:288px;filter:drop-shadow(0 10px 12px rgba(0,0,0,.45))}
-
-  .fallen{position:absolute;width:9px;border-radius:3px;z-index:20;
-    background:linear-gradient(90deg,#c9a062,#ecd29b 45%,#d3ad6c);box-shadow:0 3px 6px rgba(0,0,0,.4)}
-  .fallen::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:3px 3px 0 0;background:#b52a20}
-
-  .controls{width:100%;max-width:520px;padding:0 16px max(18px,env(safe-area-inset-bottom));text-align:center}
-  .status{height:22px;font-size:15px;letter-spacing:.12em;margin-bottom:10px;opacity:.9}
-  .meter{display:flex;gap:5px;justify-content:center;margin-bottom:14px;height:8px}
+  .controls{position:relative;z-index:2;width:100%;max-width:520px;padding:0 16px max(12px,env(safe-area-inset-bottom));text-align:center}
+  .status{height:22px;font-size:15px;letter-spacing:.12em;margin-bottom:6px;opacity:.9}
+  .meter{display:flex;gap:5px;justify-content:center;margin-bottom:10px;height:8px}
   .meter b{width:22px;height:6px;border-radius:3px;background:rgba(231,194,107,.18);transition:background .12s}
   .meter b.on{background:var(--gold);box-shadow:0 0 8px rgba(231,194,107,.7)}
   .meter b.on.hot{background:#ff9a4a;box-shadow:0 0 10px rgba(255,140,60,.9)}
+  .row{display:flex;align-items:center;justify-content:center;gap:16px}
   .shakeBtn{
-    width:112px;height:112px;border-radius:50%;cursor:pointer;touch-action:manipulation;
-    font-family:inherit;font-weight:900;font-size:40px;color:#fff3cf;letter-spacing:0;
+    width:92px;height:92px;border-radius:50%;cursor:pointer;touch-action:manipulation;
+    font-family:inherit;font-weight:900;font-size:34px;color:#fff3cf;
     background:radial-gradient(circle at 35% 30%,#d8452f,#9e1d15 60%,#6a0f0b);
     border:4px solid var(--gold);box-shadow:0 0 0 6px rgba(231,194,107,.18),0 10px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3);
     transition:transform 60ms;
   }
   .shakeBtn:active,.shakeBtn.pressed{transform:scale(.92)}
   .shakeBtn:disabled{filter:grayscale(.5) brightness(.7);cursor:default}
-  .hint{font-size:12px;opacity:.6;margin-top:10px;letter-spacing:.1em}
+  .motionBtn{display:none;padding:9px 14px;border-radius:22px;font-family:inherit;font-size:14px;font-weight:700;
+    color:var(--gold);background:rgba(0,0,0,.25);border:1.5px solid rgba(231,194,107,.6);cursor:pointer;touch-action:manipulation}
+  .motionBtn.show{display:inline-block}
+  .motionBtn.on{background:var(--gold);color:#5a0f0c;border-color:var(--gold)}
+  .hint{font-size:12px;opacity:.6;margin-top:8px;letter-spacing:.1em}
 
-  /* 籤詩 */
   .overlay{position:fixed;inset:0;background:rgba(20,3,2,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
   .overlay.show{display:flex;animation:fade .25s ease}
   @keyframes fade{from{opacity:0}to{opacity:1}}
-  .card{
-    position:relative;width:min(340px,100%);max-height:calc(100vh - 36px);overflow:auto;
-    background:
-      radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.35),transparent 60%),
-      linear-gradient(180deg,#f7e8bd,#efd89c);
-    color:var(--ink);border-radius:6px;padding:16px 16px 14px;
-    box-shadow:0 20px 50px rgba(0,0,0,.6);
-    animation:pop .45s cubic-bezier(.2,1.4,.4,1);
-  }
+  .card{position:relative;width:min(340px,100%);max-height:calc(100vh - 36px);overflow:auto;
+    background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.35),transparent 60%),linear-gradient(180deg,#f7e8bd,#efd89c);
+    color:var(--ink);border-radius:6px;padding:16px 16px 14px;box-shadow:0 20px 50px rgba(0,0,0,.6);
+    animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
   @keyframes pop{from{transform:scale(.6) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
   .frame{border:2px solid #a8261c;outline:1px solid #a8261c;outline-offset:3px;padding:14px 12px 12px;margin:4px}
   .cardTop{text-align:center;color:#a8261c;font-size:13px;letter-spacing:.4em;text-indent:.4em}
   .num{text-align:center;color:#a8261c;font-weight:900;font-size:32px;letter-spacing:.15em;text-indent:.15em;margin:4px 0 2px}
   .gz{display:block;width:fit-content;margin:4px auto 12px;border:1.5px solid #a8261c;color:#a8261c;
       padding:2px 12px;font-weight:700;font-size:18px;letter-spacing:.3em;text-indent:.3em}
-  .poem{writing-mode:vertical-rl;margin:0 auto;height:228px;font-size:24px;font-weight:700;
+  .poem{writing-mode:vertical-rl;margin:0 auto;min-height:200px;font-size:24px;font-weight:700;
         line-height:2.1;letter-spacing:.18em;display:block;width:fit-content;color:#2b130b}
   .poem span{display:block}
   .note{font-size:11px;color:#7a5a3a;text-align:center;margin-top:10px;line-height:1.5}
@@ -106,8 +84,8 @@
   .actions button{flex:1;padding:11px 0;border-radius:6px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.15em}
   .again{background:#9e1d15;color:#fff3cf;border:2px solid #7a140f}
   .copy{background:transparent;color:#9e1d15;border:2px solid #9e1d15}
-  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;
-         padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;z-index:60;pointer-events:none}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;
+         padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;z-index:60;pointer-events:none;white-space:nowrap}
   .toast.show{opacity:1}
 </style>
 </head>
@@ -116,59 +94,28 @@
 
 <header>
   <h1>求籤</h1>
-  <div class="sub">六十甲子籤</div>
+  <div class="sub" id="setName"></div>
   <button class="mute" id="mute" aria-label="聲音開關">🔊</button>
 </header>
 
-<div class="stageWrap" id="stageWrap">
-  <div class="stage" id="stage">
-    <div class="floor"></div>
-    <div class="holder" id="holder">
-      <svg class="rimBack" viewBox="0 0 150 40" aria-hidden="true">
-        <ellipse cx="75" cy="20" rx="74" ry="19" fill="#2a1508" stroke="#7a5326" stroke-width="2"/>
-      </svg>
-      <div class="sticks" id="sticks"></div>
-      <svg class="tube" viewBox="0 0 150 288" aria-hidden="true">
-        <defs>
-          <linearGradient id="bamboo" x1="0" x2="1">
-            <stop offset="0" stop-color="#6b4518"/>
-            <stop offset=".18" stop-color="#a87632"/>
-            <stop offset=".42" stop-color="#d9ab5c"/>
-            <stop offset=".6" stop-color="#c08a3c"/>
-            <stop offset="1" stop-color="#5c3a12"/>
-          </linearGradient>
-          <linearGradient id="band" x1="0" x2="1">
-            <stop offset="0" stop-color="#3c250a"/>
-            <stop offset=".45" stop-color="#7a5320"/>
-            <stop offset="1" stop-color="#2e1c07"/>
-          </linearGradient>
-        </defs>
-        <path d="M1,20 A74,19 0 0 0 149,20 L149,274 A74,13 0 0 1 1,274 Z" fill="url(#bamboo)"/>
-        <path d="M1,20 A74,19 0 0 0 149,20" fill="none" stroke="#e2bb72" stroke-width="3"/>
-        <path d="M1,102 A74,16 0 0 0 149,102 L149,110 A74,16 0 0 1 1,110 Z" fill="url(#band)" opacity=".85"/>
-        <path d="M1,212 A74,14 0 0 0 149,212 L149,220 A74,14 0 0 1 1,220 Z" fill="url(#band)" opacity=".85"/>
-        <!-- 紅紙標籤 -->
-        <rect x="52" y="130" width="46" height="74" rx="2" fill="#b3261e" stroke="#e7c26b" stroke-width="1.5"/>
-        <text x="75" y="160" text-anchor="middle" font-size="22" font-weight="900" fill="#f6dc8f" font-family="Noto Serif TC,serif">靈</text>
-        <text x="75" y="190" text-anchor="middle" font-size="22" font-weight="900" fill="#f6dc8f" font-family="Noto Serif TC,serif">籤</text>
-      </svg>
-    </div>
-  </div>
-</div>
+<div class="stageWrap" id="stageWrap"><canvas id="scene"></canvas></div>
 
 <div class="controls">
   <div class="status" id="status">誠心默念所求之事</div>
   <div class="meter" id="meter"><b></b><b></b><b></b><b></b><b></b><b></b></div>
-  <button class="shakeBtn" id="shakeBtn" aria-label="搖一下">搖</button>
-  <div class="hint">按一下上下搖一下・按越快搖越快・空白鍵也可以</div>
+  <div class="row">
+    <button class="shakeBtn" id="shakeBtn" aria-label="搖一下">搖</button>
+    <button class="motionBtn" id="motionBtn">📱 開啟搖手機</button>
+  </div>
+  <div class="hint" id="hint">按一下上下搖一下・按越快搖越快</div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true">
   <div class="card">
     <div class="frame">
-      <div class="cardTop">六十甲子籤</div>
-      <div class="num" id="rNum">第一籤</div>
-      <span class="gz" id="rGz">甲子</span>
+      <div class="cardTop" id="cardSet"></div>
+      <div class="num" id="rNum"></div>
+      <span class="gz" id="rGz"></span>
       <div class="poem" id="rPoem"></div>
     </div>
     <div class="note">各廟宇籤詩文字略有出入，僅供參考。<br>傳統上抽到籤後，可再擲筊確認是否為此籤。</div>
@@ -181,116 +128,221 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ---------- 六十甲子籤詩 ---------- */
+/* ================================================================
+   ★★★ 籤詩在這裡改 ★★★
+   - SET_NAME：籤詩名稱（顯示在籤紙最上面）
+   - POEMS：一支籤一行，順序就是籤號（第 1 行 = 第一籤）
+       title：籤號下方紅框裡的字（干支等），不要可以留空 ""
+       poem ：籤詩，每一句一個 "…"，幾句都可以
+   - 籤的數量會自動跟著 POEMS 的行數，要 60 支、100 支都可以
+   - 注意：每一行最後的逗號不要刪掉
+   ================================================================ */
+const SET_NAME = "六十甲子籤";
 const POEMS = [
-"日出便見風雲散，光明清淨照世間，一向前途通大道，萬事清吉保平安",
-"於今此景正當時，看看欲吐百花魁，若能遇得春色到，一洒清吉脫塵埃",
-"勸君把定心莫虛，天註衣祿自有餘，和合重重常吉慶，時來終遇得明珠",
-"風恬浪靜可行舟，恰是中秋月一輪，凡事不須多憂慮，福祿自有慶家門",
-"只恐前途命有變，勸君作急可宜先，且守長江無大事，命逢太白守身邊",
-"風雲致雨落洋洋，天災時氣必有傷，命內此事難和合，更逢一足出外鄉",
-"雲開月出正分明，不須進退問前程，婚姻皆由天註定，和合清吉萬事成",
-"禾稻看看結成完，此事必定兩相全，回到家中寬心坐，妻兒鼓舞樂團圓",
-"龍虎相隨在深山，君爾何須背後看，不知此去相愛悞，他日與我卻無干",
-"花開結子一半枯，可惜今年汝虛度，漸漸日落西山去，勸君不用向前途",
-"靈雞漸漸見分明，凡事且看子丑寅，雲開月出照天下，郎君即便見太平",
-"長江風浪漸漸靜，于今得進可安寧，必有貴人相扶助，凶事脫出見太平",
-"命中正逢羅孛關，用盡心機總未休，作福問神難得過，恰是行舟上高灘",
-"財中漸漸見分明，花開花謝結子成，寬心且看月中桂，郎君即便見太平",
-"八十原來是太公，看看晚景遇文王，目下緊事休相問，勸君且守待運通",
-"不須作福不須求，用盡心機總未休，陽世不知陰世事，官法如爐不自由",
-"舊恨重重未改為，家中禍患不臨身，須當謹防宜作福，龍蛇交會得和合",
-"君問中間此言因，看看祿馬拱前程，若得貴人多得利，和合自有兩分明",
-"富貴由命天註定，心高必然誤君期，不然且回依舊路，雲開月出自分明",
-"前途功名未得意，只恐命內有交加，兩家必定防損失，勸君且退莫咨嗟",
-"十方佛法有靈通，大難禍患不相同，紅日當空常照耀，還有貴人到家堂",
-"太公家業八十成，月出光輝四海明，命內自然逢大吉，茅屋中間百事亨",
-"欲去長江水闊茫，前途未遂運未通，如今絲綸常在手，只恐魚水不相逢",
-"月出光輝四海明，前途祿位見太平，浮雲掃退終無事，可保禍患不臨身",
-"總是前途莫心勞，求神問聖枉是多，但看雞犬日過後，不須作福事如何",
-"選出牡丹第一枝，勸君折取莫遲疑，世間若問相知處，萬事逢春正及時",
-"君爾寬心且自由，門庭清吉家無憂，財寶自然終吉利，凡事無傷不用求",
-"於今莫作此當時，虎落平陽被犬欺，世間凡事何難定，千山萬水也遲疑",
-"枯木可惜未逢春，如今返在暗中藏，寬心且守風霜退，還君依舊作乾坤",
-"漸漸看此月中和，過後須防未得高，改變顏色前途去，凡事必定見重勞",
-"綠柳蒼蒼正當時，任君此去作乾坤，花果結實無殘謝，福祿自有慶家門",
-"龍虎相交在門前，此事必定兩相連，黃金忽然變成鐵，何用作福問神仙",
-"欲去長江水闊茫，行舟把定未遭風，戶內用心再作福，看看魚水得相逢",
-"危險高山行過盡，莫嫌此路有重重，若見蘭桂漸漸發，長蛇反轉變成龍",
-"此事何須用心機，前途變怪自然知，看看此去得和合，漸漸脫出見太平",
-"福如東海壽如山，君爾何須嘆苦難，命內自然逢大吉，祈保分明自平安",
-"運逢得意身顯變，君爾身中皆有益，一向前途無難事，決意之中保清吉",
-"名顯有意在中央，不須祈禱心自安，看看早晚日過後，即時得意在其間",
-"意中若問神仙路，勸爾且退望高樓，寬心且守寬心坐，必然遇得貴人扶",
-"平生富貴成祿位，君家門戶定光輝，此中必定無損失，夫妻百歲喜相隨",
-"今行到手實難推，歌歌暢飲自徘徊，雞犬相聞消息近，婚姻夙世結成雙",
-"一重江水一重山，誰知此去路又難，任他改求終不過，是非終久未得安",
-"一年作事急如飛，君爾寬心莫遲疑，貴人還在千里外，音信月中漸漸知",
-"客到前途多得利，君爾何故兩相疑，雖是中間逢進退，月出光輝得運時",
-"花開今已結成果，富貴榮華終到老，君子小人相會合，萬事清吉莫煩惱",
-"功名得意與君顯，前途富貴喜安然，若遇一輪明月照，十五團圓照滿天",
-"君爾何須問聖跡，自己心中皆有益，於今且看月中旬，凶事脫出化成吉",
-"陽世作事未和同，雲遮月色正朦朧，心中意欲前途去，只恐命內運未通",
-"言語雖多不可從，風雲靜處未行龍，暗中終得明消息，君爾何須問重重",
-"佛前發誓無異心，且看前途得好音，此物原來本是鐵，也能變化得成金",
-"東西南北不堪行，前途此事正可當，勸君把定莫煩惱，家門自有保安康",
-"功名事業本由天，不須掛念意懸懸，若問中間遲與速，風雲際會在眼前",
-"看君來問心中事，積善之家慶有餘，運亨財子雙雙至，指日喜氣溢門閭",
-"孤燈寂寂夜沉沉，萬事清吉萬事成，若逢陰中有善果，燒得好香達神明",
-"須知進退總虛言，看看發暗未必全，珠玉深藏還未變，心中但得枉徒然",
-"病中若得苦心勞，到底完全總未遭，去後不須回頭問，心中事務盡消磨",
-"勸君把定心莫虛，前途清吉得運時，到底中間無大事，又遇神仙守安居",
-"蛇身意欲變成龍，只恐命內運未通，久病且作寬心坐，言語雖多不可從",
-"有心作福莫遲疑，求名清吉正當時，此事必能成會合，財寶自然喜相隨",
-"月出光輝本清吉，浮雲總是蔽陰色，戶內用心再作福，當官分理便有益"
+  { title:"甲子", poem:["日出便見風雲散","光明清淨照世間","一向前途通大道","萬事清吉保平安"] },   // 第1籤
+  { title:"甲寅", poem:["於今此景正當時","看看欲吐百花魁","若能遇得春色到","一洒清吉脫塵埃"] },   // 第2籤
+  { title:"甲辰", poem:["勸君把定心莫虛","天註衣祿自有餘","和合重重常吉慶","時來終遇得明珠"] },   // 第3籤
+  { title:"甲午", poem:["風恬浪靜可行舟","恰是中秋月一輪","凡事不須多憂慮","福祿自有慶家門"] },   // 第4籤
+  { title:"甲申", poem:["只恐前途命有變","勸君作急可宜先","且守長江無大事","命逢太白守身邊"] },   // 第5籤
+  { title:"甲戌", poem:["風雲致雨落洋洋","天災時氣必有傷","命內此事難和合","更逢一足出外鄉"] },   // 第6籤
+  { title:"乙丑", poem:["雲開月出正分明","不須進退問前程","婚姻皆由天註定","和合清吉萬事成"] },   // 第7籤
+  { title:"乙卯", poem:["禾稻看看結成完","此事必定兩相全","回到家中寬心坐","妻兒鼓舞樂團圓"] },   // 第8籤
+  { title:"乙巳", poem:["龍虎相隨在深山","君爾何須背後看","不知此去相愛悞","他日與我卻無干"] },   // 第9籤
+  { title:"乙未", poem:["花開結子一半枯","可惜今年汝虛度","漸漸日落西山去","勸君不用向前途"] },   // 第10籤
+  { title:"乙酉", poem:["靈雞漸漸見分明","凡事且看子丑寅","雲開月出照天下","郎君即便見太平"] },   // 第11籤
+  { title:"乙亥", poem:["長江風浪漸漸靜","于今得進可安寧","必有貴人相扶助","凶事脫出見太平"] },   // 第12籤
+  { title:"丙子", poem:["命中正逢羅孛關","用盡心機總未休","作福問神難得過","恰是行舟上高灘"] },   // 第13籤
+  { title:"丙寅", poem:["財中漸漸見分明","花開花謝結子成","寬心且看月中桂","郎君即便見太平"] },   // 第14籤
+  { title:"丙辰", poem:["八十原來是太公","看看晚景遇文王","目下緊事休相問","勸君且守待運通"] },   // 第15籤
+  { title:"丙午", poem:["不須作福不須求","用盡心機總未休","陽世不知陰世事","官法如爐不自由"] },   // 第16籤
+  { title:"丙申", poem:["舊恨重重未改為","家中禍患不臨身","須當謹防宜作福","龍蛇交會得和合"] },   // 第17籤
+  { title:"丙戌", poem:["君問中間此言因","看看祿馬拱前程","若得貴人多得利","和合自有兩分明"] },   // 第18籤
+  { title:"丁丑", poem:["富貴由命天註定","心高必然誤君期","不然且回依舊路","雲開月出自分明"] },   // 第19籤
+  { title:"丁卯", poem:["前途功名未得意","只恐命內有交加","兩家必定防損失","勸君且退莫咨嗟"] },   // 第20籤
+  { title:"丁巳", poem:["十方佛法有靈通","大難禍患不相同","紅日當空常照耀","還有貴人到家堂"] },   // 第21籤
+  { title:"丁未", poem:["太公家業八十成","月出光輝四海明","命內自然逢大吉","茅屋中間百事亨"] },   // 第22籤
+  { title:"丁酉", poem:["欲去長江水闊茫","前途未遂運未通","如今絲綸常在手","只恐魚水不相逢"] },   // 第23籤
+  { title:"丁亥", poem:["月出光輝四海明","前途祿位見太平","浮雲掃退終無事","可保禍患不臨身"] },   // 第24籤
+  { title:"戊子", poem:["總是前途莫心勞","求神問聖枉是多","但看雞犬日過後","不須作福事如何"] },   // 第25籤
+  { title:"戊寅", poem:["選出牡丹第一枝","勸君折取莫遲疑","世間若問相知處","萬事逢春正及時"] },   // 第26籤
+  { title:"戊辰", poem:["君爾寬心且自由","門庭清吉家無憂","財寶自然終吉利","凡事無傷不用求"] },   // 第27籤
+  { title:"戊午", poem:["於今莫作此當時","虎落平陽被犬欺","世間凡事何難定","千山萬水也遲疑"] },   // 第28籤
+  { title:"戊申", poem:["枯木可惜未逢春","如今返在暗中藏","寬心且守風霜退","還君依舊作乾坤"] },   // 第29籤
+  { title:"戊戌", poem:["漸漸看此月中和","過後須防未得高","改變顏色前途去","凡事必定見重勞"] },   // 第30籤
+  { title:"己丑", poem:["綠柳蒼蒼正當時","任君此去作乾坤","花果結實無殘謝","福祿自有慶家門"] },   // 第31籤
+  { title:"己卯", poem:["龍虎相交在門前","此事必定兩相連","黃金忽然變成鐵","何用作福問神仙"] },   // 第32籤
+  { title:"己巳", poem:["欲去長江水闊茫","行舟把定未遭風","戶內用心再作福","看看魚水得相逢"] },   // 第33籤
+  { title:"己未", poem:["危險高山行過盡","莫嫌此路有重重","若見蘭桂漸漸發","長蛇反轉變成龍"] },   // 第34籤
+  { title:"己酉", poem:["此事何須用心機","前途變怪自然知","看看此去得和合","漸漸脫出見太平"] },   // 第35籤
+  { title:"己亥", poem:["福如東海壽如山","君爾何須嘆苦難","命內自然逢大吉","祈保分明自平安"] },   // 第36籤
+  { title:"庚子", poem:["運逢得意身顯變","君爾身中皆有益","一向前途無難事","決意之中保清吉"] },   // 第37籤
+  { title:"庚寅", poem:["名顯有意在中央","不須祈禱心自安","看看早晚日過後","即時得意在其間"] },   // 第38籤
+  { title:"庚辰", poem:["意中若問神仙路","勸爾且退望高樓","寬心且守寬心坐","必然遇得貴人扶"] },   // 第39籤
+  { title:"庚午", poem:["平生富貴成祿位","君家門戶定光輝","此中必定無損失","夫妻百歲喜相隨"] },   // 第40籤
+  { title:"庚申", poem:["今行到手實難推","歌歌暢飲自徘徊","雞犬相聞消息近","婚姻夙世結成雙"] },   // 第41籤
+  { title:"庚戌", poem:["一重江水一重山","誰知此去路又難","任他改求終不過","是非終久未得安"] },   // 第42籤
+  { title:"辛丑", poem:["一年作事急如飛","君爾寬心莫遲疑","貴人還在千里外","音信月中漸漸知"] },   // 第43籤
+  { title:"辛卯", poem:["客到前途多得利","君爾何故兩相疑","雖是中間逢進退","月出光輝得運時"] },   // 第44籤
+  { title:"辛巳", poem:["花開今已結成果","富貴榮華終到老","君子小人相會合","萬事清吉莫煩惱"] },   // 第45籤
+  { title:"辛未", poem:["功名得意與君顯","前途富貴喜安然","若遇一輪明月照","十五團圓照滿天"] },   // 第46籤
+  { title:"辛酉", poem:["君爾何須問聖跡","自己心中皆有益","於今且看月中旬","凶事脫出化成吉"] },   // 第47籤
+  { title:"辛亥", poem:["陽世作事未和同","雲遮月色正朦朧","心中意欲前途去","只恐命內運未通"] },   // 第48籤
+  { title:"壬子", poem:["言語雖多不可從","風雲靜處未行龍","暗中終得明消息","君爾何須問重重"] },   // 第49籤
+  { title:"壬寅", poem:["佛前發誓無異心","且看前途得好音","此物原來本是鐵","也能變化得成金"] },   // 第50籤
+  { title:"壬辰", poem:["東西南北不堪行","前途此事正可當","勸君把定莫煩惱","家門自有保安康"] },   // 第51籤
+  { title:"壬午", poem:["功名事業本由天","不須掛念意懸懸","若問中間遲與速","風雲際會在眼前"] },   // 第52籤
+  { title:"壬申", poem:["看君來問心中事","積善之家慶有餘","運亨財子雙雙至","指日喜氣溢門閭"] },   // 第53籤
+  { title:"壬戌", poem:["孤燈寂寂夜沉沉","萬事清吉萬事成","若逢陰中有善果","燒得好香達神明"] },   // 第54籤
+  { title:"癸丑", poem:["須知進退總虛言","看看發暗未必全","珠玉深藏還未變","心中但得枉徒然"] },   // 第55籤
+  { title:"癸卯", poem:["病中若得苦心勞","到底完全總未遭","去後不須回頭問","心中事務盡消磨"] },   // 第56籤
+  { title:"癸巳", poem:["勸君把定心莫虛","前途清吉得運時","到底中間無大事","又遇神仙守安居"] },   // 第57籤
+  { title:"癸未", poem:["蛇身意欲變成龍","只恐命內運未通","久病且作寬心坐","言語雖多不可從"] },   // 第58籤
+  { title:"癸酉", poem:["有心作福莫遲疑","求名清吉正當時","此事必能成會合","財寶自然喜相隨"] },   // 第59籤
+  { title:"癸亥", poem:["月出光輝本清吉","浮雲總是蔽陰色","戶內用心再作福","當官分理便有益"] },   // 第60籤
 ];
-const STEMS="甲乙丙丁戊己庚辛壬癸", EVEN="子寅辰午申戌", ODD="丑卯巳未酉亥";
-const GANZHI=[]; for(let s=0;s<10;s++){const b=s%2?ODD:EVEN; for(const c of b) GANZHI.push(STEMS[s]+c);}
-function cnNum(n){const d="〇一二三四五六七八九"; if(n<10)return d[n]; const t=Math.floor(n/10),o=n%10;
-  return (t===1?"":d[t])+"十"+(o?d[o]:"");}
+</script>
 
-/* ---------- 元素 ---------- */
+<script type="module">
+/* ===================== 以下是程式，不用改 ===================== */
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
 const $=id=>document.getElementById(id);
-const holder=$("holder"), sticksEl=$("sticks"), stage=$("stage"), btn=$("shakeBtn"),
-      statusEl=$("status"), meterBars=[...$("meter").children], overlay=$("overlay");
-
-/* ---------- 舞台縮放 ---------- */
-let scale=1;
-function fit(){
-  const wrap=$("stageWrap"); const h=wrap.clientHeight, w=wrap.clientWidth;
-  scale=Math.min(1.15, h/470, w/340); stage.style.transform=`scale(${scale})`;
-}
-addEventListener("resize",fit);
-
-/* ---------- 竹籤 ---------- */
-const N=28, sticks=[];
 const rand=(a,b)=>a+Math.random()*(b-a);
-for(let i=0;i<N;i++){
-  const el=document.createElement("div"); el.className="stick";
-  const x=6+i*(104/(N-1))+rand(-2,2), h=rand(150,174), r=(x-57)/57*7+rand(-1.5,1.5);
-  el.style.left=x+"px"; el.style.height=h+"px"; el.style.zIndex=Math.floor(rand(1,4));
-  sticksEl.appendChild(el);
-  sticks.push({el,x,h,r,off:0});
-}
-function drawStick(s){ s.el.style.transform=`translateX(-50%) rotate(${s.r}deg) translateY(${-s.off}px)`; }
-sticks.forEach(drawStick);
+const btn=$("shakeBtn"), statusEl=$("status"), meterBars=[...$("meter").children], overlay=$("overlay");
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),2200); }
+function cnNum(n){const d="〇一二三四五六七八九"; if(n<10)return d[n];
+  if(n<20)return "十"+(n%10?d[n%10]:""); if(n<100){const t=Math.floor(n/10),o=n%10;return d[t]+"十"+(o?d[o]:"");}
+  const h=Math.floor(n/100),r=n%100; return d[h]+"百"+(r===0?"":(r<10?"零"+d[r]:(r<20?"一":"")+cnNum(r)));}
+$("setName").textContent=SET_NAME; $("cardSet").textContent=SET_NAME; document.title="求籤・"+SET_NAME;
 
+/* ---------- 3D 場景 ---------- */
+const canvas=$("scene"), wrap=$("stageWrap");
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); }
+catch(e){ toast("這個瀏覽器不支援 3D 顯示"); throw e; }
+renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.1;
+renderer.shadowMap.enabled=true;
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(32,1,0.1,100);
+// 環境反光：讓黑漆有光澤
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture; scene.environmentIntensity=0.22;
+const TARGET=new THREE.Vector3(0,2.45,0), CAMDIR=new THREE.Vector3(0,0.5,1).normalize();
+
+scene.add(new THREE.HemisphereLight(0xffe6c8,0x3a0a06,1.1));
+const key=new THREE.DirectionalLight(0xffdcae,2.6); key.position.set(3.5,7,5); key.castShadow=true;
+key.shadow.mapSize.set(1024,1024);
+Object.assign(key.shadow.camera,{left:-4,right:4,top:6,bottom:-4,near:1,far:25});
+key.shadow.bias=-0.0004; key.shadow.normalBias=0.02;
+scene.add(key);
+const rimL=new THREE.DirectionalLight(0xff9a60,1.6); rimL.position.set(-5,3,-2); scene.add(rimL);
+const front=new THREE.DirectionalLight(0xffe0c0,0.6); front.position.set(0,2,8); scene.add(front);
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.ShadowMaterial({opacity:.3}));
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+
+/* 籤筒：黑色方形木筒，筒口一圈原木色 */
+const W=1.15, T=0.075, H=2.4, IN=W/2-T, LIFT=0.3, PIVOT=1.0;
+const lacquer=new THREE.MeshPhysicalMaterial({color:0x121110,roughness:.35,clearcoat:.9,clearcoatRoughness:.25});
+const innerMat=new THREE.MeshStandardMaterial({color:0x1a120c,roughness:.95});
+const woodTop=new THREE.MeshStandardMaterial({color:0xcfa46c,roughness:.6});
+
+const holder=new THREE.Group();          // 手握的支點，搖動就是動這個
+holder.position.set(0,LIFT+PIVOT,0);
+scene.add(holder);
+const body=new THREE.Group(); body.position.y=-PIVOT; body.rotation.y=-0.55; holder.add(body);   // 斜 30 度，看得到兩個面
+
+function wallMesh(w,d,x,z,innerFace){
+  const mats=[lacquer,lacquer,woodTop,lacquer,lacquer,lacquer];
+  if(innerFace!=null) mats[innerFace]=innerMat;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,H,d),mats);
+  m.position.set(x,H/2,z); m.castShadow=true; m.receiveShadow=true; body.add(m);
+}
+// BoxGeometry 面的順序：+x,-x,+y,-y,+z,-z
+wallMesh(W,T,0, W/2-T/2,5);            // 前
+wallMesh(W,T,0,-W/2+T/2,4);            // 後
+wallMesh(T,W-2*T, W/2-T/2,0,1);        // 右
+wallMesh(T,W-2*T,-W/2+T/2,0,0);        // 左
+const bottom=new THREE.Mesh(new THREE.BoxGeometry(W-2*T,T,W-2*T),innerMat); bottom.position.y=T/2; body.add(bottom);
+// 底座細邊
+const foot=new THREE.Mesh(new THREE.BoxGeometry(W+0.04,0.06,W+0.04),lacquer); foot.position.y=0.03; foot.castShadow=true; body.add(foot);
+
+/* 竹籤 */
+const SW=0.075, ST=0.02, WOOD=H+0.22, RED=1.5, SL=WOOD+RED;
+const redShape=new THREE.Shape();
+redShape.moveTo(-SW/2,0); redShape.lineTo(SW/2,0); redShape.lineTo(SW/2,RED-0.11); redShape.lineTo(0,RED); redShape.lineTo(-SW/2,RED-0.11); redShape.closePath();
+const redGeo=new THREE.ExtrudeGeometry(redShape,{depth:ST,bevelEnabled:false}); redGeo.translate(0,WOOD,-ST/2);
+const woodGeo=new THREE.BoxGeometry(SW,WOOD,ST); woodGeo.translate(0,WOOD/2,0);
+const redMat=new THREE.MeshStandardMaterial({color:0xb81c0e,roughness:.45});
+const stickWood=new THREE.MeshStandardMaterial({color:0xcfa46c,roughness:.75});
+
+const sticksGroup=new THREE.Group(); body.add(sticksGroup);
+const UP=new THREE.Vector3(0,1,0);
+const N=46, sticks=[];
+for(let i=0;i<N;i++){
+  const lim=IN-0.035;
+  // 筒底的位置
+  const B=new THREE.Vector3(rand(-lim,lim), T+0.002, rand(-lim,lim));
+  // 靠在筒口的位置：大多斜向對面，所以會自然散開成扇形，但一定在筒口裡面
+  const k=rand(0.2,0.85);
+  const R=new THREE.Vector3(
+    THREE.MathUtils.clamp(-B.x*k+rand(-0.1,0.1),-lim,lim), H,
+    THREE.MathUtils.clamp(-B.z*k+rand(-0.1,0.1),-lim,lim));
+  const dir=R.clone().sub(B).normalize();
+  const q=new THREE.Quaternion().setFromUnitVectors(UP,dir)
+           .multiply(new THREE.Quaternion().setFromAxisAngle(UP,rand(0,Math.PI)));
+  const g=new THREE.Group();
+  const mr=new THREE.Mesh(redGeo,redMat), mw=new THREE.Mesh(woodGeo,stickWood);
+  mr.castShadow=mw.castShadow=true; mr.receiveShadow=mw.receiveShadow=true;
+  g.add(mr,mw); sticksGroup.add(g);
+  const s={g,B,R,dir,q,off:0,len:rand(-0.12,0.12)};
+  sticks.push(s); placeStick(s);
+}
+function placeStick(s){
+  s.g.position.copy(s.B).addScaledVector(s.dir,s.off+s.len);
+  s.g.quaternion.copy(s.q);
+}
 let lead=null;
-function pickLead(){ lead=sticks[Math.floor(rand(8,20))]; sticks.forEach(s=>s.el.classList.remove("lead")); lead.el.classList.add("lead"); }
+function pickLead(){
+  const c=sticks.filter(s=>Math.abs(s.R.x)<0.25 && Math.abs(s.R.z)<0.25);
+  lead=(c.length?c:sticks)[Math.floor(Math.random()*(c.length||sticks.length))];
+}
 pickLead();
+
+/* 畫面大小 */
+function resize(){
+  const w=wrap.clientWidth, h=wrap.clientHeight; if(!w||!h) return;
+  renderer.setSize(w,h,false); camera.aspect=w/h;
+  const half=THREE.MathUtils.degToRad(camera.fov/2);
+  const d=Math.max(6.0/(2*Math.tan(half)), 3.4/(2*Math.tan(half)*camera.aspect));
+  camera.position.copy(TARGET).addScaledVector(CAMDIR,d); camera.lookAt(TARGET);
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize",resize); new ResizeObserver(resize).observe(wrap);
 
 /* ---------- 聲音 ---------- */
 let ac=null, noiseBuf=null, muted=false;
+try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
 function ensureAudio(){
   try{
     if(!ac){ ac=new (window.AudioContext||window.webkitAudioContext)();
       noiseBuf=ac.createBuffer(1,ac.sampleRate*0.08,ac.sampleRate);
       const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
-    if(ac.state==="suspended") ac.resume().catch(()=>{});
+    if(ac.state!=="running") ac.resume().catch(()=>{});
   }catch(e){ ac=null; }
 }
+function unlockAudio(){
+  ensureAudio(); if(!ac) return;
+  try{ const b=ac.createBuffer(1,1,22050), s=ac.createBufferSource(); s.buffer=b; s.connect(ac.destination); s.start(0); }catch(e){}
+}
+["touchend","click","keydown"].forEach(ev=>document.addEventListener(ev,unlockAudio,{passive:true}));
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&ac&&ac.state!=="running") ac.resume().catch(()=>{}); });
 function clack(t,freq,vol){
-  if(!ac||muted) return;
+  if(!ac||muted||ac.state!=="running") return;
   const src=ac.createBufferSource(); src.buffer=noiseBuf;
   const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=freq; bp.Q.value=7;
   const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.002);
@@ -306,117 +358,123 @@ function shakeSound(rate){
 }
 $("mute").addEventListener("click",()=>{ muted=!muted; $("mute").textContent=muted?"🔇":"🔊"; });
 
-/* ---------- 物理 ---------- */
-const BASE=26;            // 第一人稱：籤筒往前（遠離自己）傾斜的角度
-let ang=0, vel=0, y=0, vy=0, rz=0, vrz=0;
+/* ---------- 搖動物理 ---------- */
+const BASE_TILT=-0.06;   // 籤筒稍微往前（遠離自己）傾
+let tilt=0, vTilt=0, y=0, vy=0, rz=0, vrz=0;
 let progress=0, shown=0, lastPress=0, presses=[];
-let state="idle";         // idle | shaking | falling | result
-
+let state="idle";        // idle | shaking | falling | result
 function rateNow(t){ presses=presses.filter(p=>t-p<1000); return presses.length; }
 
-function shake(){
+function shake(power=1){
   if(state==="falling"||state==="result") return;
   ensureAudio();
   const t=performance.now(); presses.push(t); lastPress=t;
-  const rate=rateNow(t);
+  const rate=rateNow(t), r=Math.min(rate,9);
   state="shaking";
-  // 上下搖：往下一頓＋往前一點頭，再彈回來
-  vy  += 300+38*Math.min(rate,9);
-  vel += 110+16*Math.min(rate,9);
-  vrz += rand(-25,25);
-  // 越快越容易冒出來
-  progress += (0.03 + 0.0065*Math.min(rate,10)) * rand(.6,1.4);
-  // 其他竹籤跳動
-  sticks.forEach(s=>{ if(s!==lead){ s.off=Math.random()<.5?rand(0,5+rate*1.6):0; drawStick(s);} });
+  vy   -= (1.5+0.18*r)*power;            // 往下一頓
+  vTilt-= (1.6+0.22*r)*power;            // 往前點頭
+  vrz  += rand(-0.6,0.6);
+  progress += (0.03+0.0065*Math.min(rate,10))*rand(.6,1.4)*Math.min(1.4,power);
+  sticks.forEach(s=>{ if(s!==lead) s.off=Math.random()<.55?rand(0,0.03+r*0.012):0; });
   shakeSound(rate);
   try{ navigator.vibrate&&navigator.vibrate(8);}catch(e){}
   if(progress>=1){ progress=1; drop(); }
 }
 
-let lastT=performance.now();
-function loop(t){
-  const dt=Math.min(0.04,(t-lastT)/1000); lastT=t;
-  // 彈簧
-  const acc=-280*ang-11*vel; vel+=acc*dt; ang+=vel*dt; ang=Math.max(-12,Math.min(22,ang));
-  const ay=-340*y-13*vy; vy+=ay*dt; y+=vy*dt; y=Math.max(-30,Math.min(40,y));
-  const az=-200*rz-12*vrz; vrz+=az*dt; rz+=vrz*dt;
-  holder.style.transform=`translateY(${y}px) perspective(760px) rotateX(${BASE+ang}deg) rotateZ(${rz}deg)`;
-
-  if(state==="shaking"){
-    if(t-lastPress>450) progress=Math.max(0,progress-0.07*dt);   // 停下來會慢慢縮回去
-    if(t-lastPress>1500 && progress<0.02) state="idle";
-  }
-  // 領頭竹籤
-  if(state!=="falling" && state!=="result"){
-    shown += (progress-shown)*Math.min(1,dt*14);
-    lead.off = shown*118 + (t-lastPress<200? rand(0,4):0);
-    drawStick(lead);
-  }
-  // 速度表與狀態
-  const rate=rateNow(t), lit=Math.min(6,Math.ceil(rate/1.6));
-  meterBars.forEach((b,i)=>{ b.classList.toggle("on",i<lit); b.classList.toggle("hot",i<lit&&lit>=5); });
-  if(state==="idle") statusEl.textContent="誠心默念所求之事";
-  else if(state==="shaking") statusEl.textContent = progress>0.7?"快出來了…": progress>0.35?"有一支籤冒出來了…":"搖動中…";
-  requestAnimationFrame(loop);
-}
-
 /* ---------- 掉籤 ---------- */
-let fallen=null, resultNo=1;
+let resultNo=1, fall=null;
+const tmpV=new THREE.Vector3();
 function drop(){
   state="falling"; btn.disabled=true; statusEl.textContent="籤落！";
-  resultNo = 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 60);
-
-  const sr=stage.getBoundingClientRect(), lr=lead.el.getBoundingClientRect();
-  const cx=(lr.left+lr.width/2-sr.left)/scale, cy=(lr.top+lr.height/2-sr.top)/scale;
-  const h=Math.max(90,lr.height/scale), w=9, a0=rz+lead.r;
-  lead.el.style.visibility="hidden";
-
-  fallen=document.createElement("div"); fallen.className="fallen";
-  fallen.style.height=h+"px"; fallen.style.left=(cx-w/2)+"px"; fallen.style.top=(cy-h/2)+"px";
-  stage.appendChild(fallen);
-  const landX=250, landY=440-w/2, dx=landX-cx, dy=landY-cy;
-  const anim=fallen.animate([
-    {transform:`translate(0,0) rotate(${a0}deg)`},
-    {transform:`translate(${dx*0.15}px,${-100}px) rotate(${a0+35}deg)`, offset:.28},
-    {transform:`translate(${dx}px,${dy}px) rotate(92deg)`, offset:.7, easing:"ease-out"},
-    {transform:`translate(${dx+4}px,${dy-16}px) rotate(84deg)`, offset:.82},
-    {transform:`translate(${dx+6}px,${dy}px) rotate(90deg)`}
-  ],{duration:820,easing:"cubic-bezier(.3,.1,.6,1)",fill:"forwards"});
-  vy -= 200; vel -= 80; // 籤筒反彈
-  if(ac&&!muted){ const n=ac.currentTime; clack(n+0.57,1100,.7); clack(n+0.67,1300,.45); clack(n+0.8,1200,.3); }
-  try{ navigator.vibrate&&navigator.vibrate([0,560,30,80,20]);}catch(e){}
-  anim.onfinish=()=>setTimeout(showResult,380);
+  resultNo = 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % POEMS.length);
+  scene.attach(lead.g);                                      // 從籤筒拿出來，改用世界座標
+  const P0=lead.g.position.clone(), Q0=lead.g.quaternion.clone();
+  const dirW=UP.clone().applyQuaternion(Q0);
+  const PA=P0.clone().addScaledVector(dirW,1.7);              // 先沿著籤的方向滑出來
+  // 最後平躺在地上、在籤筒前面
+  const ang=rand(0.3,0.55);
+  const yAx=new THREE.Vector3(Math.cos(ang),0,-Math.sin(ang)).normalize();
+  const zAx=new THREE.Vector3(0,1,0), xAx=new THREE.Vector3().crossVectors(yAx,zAx);
+  const Q1=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAx,yAx,zAx));
+  const center=new THREE.Vector3(rand(-0.15,0.1),ST/2,rand(0.95,1.15));
+  const P1=center.clone().addScaledVector(yAx,-SL/2);
+  fall={t0:performance.now(),P0,Q0,PA,P1,Q1,landed:0};
+  vy+=1.2; vTilt+=1.0;
+  try{ navigator.vibrate&&navigator.vibrate([0,620,30,80,20]);}catch(e){}
+}
+const easeOut=u=>1-(1-u)**3, easeIn=u=>u*u, easeIO=u=>u<.5?2*u*u:1-(-2*u+2)**2/2;
+function updateFall(now){
+  const t=(now-fall.t0)/1000, g=lead.g;
+  const TA=0.28, TB=0.62, TC=0.22;
+  if(t<TA){ const u=easeOut(t/TA); g.position.lerpVectors(fall.P0,fall.PA,u); g.quaternion.copy(fall.Q0); }
+  else if(t<TA+TB){
+    const u=(t-TA)/TB;
+    g.position.lerpVectors(fall.PA,fall.P1,easeIn(u)); g.position.y+=Math.sin(Math.PI*u)*0.9*(1-u);
+    g.quaternion.slerpQuaternions(fall.Q0,fall.Q1,easeIO(u));
+  } else if(t<TA+TB+TC){
+    if(fall.landed===0){ fall.landed=1; if(ac&&!muted){const n=ac.currentTime; clack(n,1100,.75); clack(n+0.11,1350,.45);} }
+    const u=(t-TA-TB)/TC; g.position.copy(fall.P1); g.position.y+=Math.sin(Math.PI*u)*0.14*(1-u); g.quaternion.copy(fall.Q1);
+  } else {
+    g.position.copy(fall.P1); g.quaternion.copy(fall.Q1);
+    if(fall.landed===1){ fall.landed=2; if(ac&&!muted) clack(ac.currentTime,1200,.3); setTimeout(showResult,420); }
+  }
 }
 
 function showResult(){
   state="result";
+  const p=POEMS[resultNo-1];
   $("rNum").textContent="第"+cnNum(resultNo)+"籤";
-  $("rGz").textContent=GANZHI[resultNo-1];
-  $("rPoem").innerHTML=POEMS[resultNo-1].split("，").map(l=>`<span>${l}</span>`).join("");
-  overlay.classList.add("show");
-  $("againBtn").focus();
+  $("rGz").textContent=p.title||""; $("rGz").style.display=p.title?"":"none";
+  $("rPoem").innerHTML=p.poem.map(l=>`<span>${l}</span>`).join("");
+  overlay.classList.add("show"); $("againBtn").focus();
 }
-
 function reset(){
   overlay.classList.remove("show");
-  if(fallen){ fallen.remove(); fallen=null; }
-  lead.el.style.visibility=""; progress=0; shown=0; lead.off=0; drawStick(lead);
-  pickLead(); presses=[]; state="idle"; btn.disabled=false;
+  sticksGroup.add(lead.g); lead.off=0; placeStick(lead);
+  fall=null; progress=0; shown=0; presses=[]; pickLead(); state="idle"; btn.disabled=false;
 }
 $("againBtn").addEventListener("click",reset);
-
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1400); }
 $("copyBtn").addEventListener("click",()=>{
-  const txt=`六十甲子籤 第${cnNum(resultNo)}籤（${GANZHI[resultNo-1]}）\n`+POEMS[resultNo-1].split("，").join("\n");
+  const p=POEMS[resultNo-1];
+  const txt=`${SET_NAME} 第${cnNum(resultNo)}籤${p.title?"（"+p.title+"）":""}\n`+p.poem.join("\n");
   const fallback=()=>{ const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
     try{document.execCommand("copy");toast("已複製");}catch(e){toast("無法複製");} ta.remove(); };
   try{ navigator.clipboard.writeText(txt).then(()=>toast("已複製"),fallback); }catch(e){ fallback(); }
 });
 
-/* ---------- 輸入 ---------- */
+/* ---------- 每一格畫面 ---------- */
+let lastT=performance.now();
+function loop(now){
+  const dt=Math.min(0.04,(now-lastT)/1000); lastT=now;
+  vTilt+=(-260*tilt-11*vTilt)*dt; tilt+=vTilt*dt; tilt=THREE.MathUtils.clamp(tilt,-0.45,0.25);
+  vy+=(-330*y-13*vy)*dt; y+=vy*dt; y=THREE.MathUtils.clamp(y,-0.28,0.22);
+  vrz+=(-200*rz-12*vrz)*dt; rz+=vrz*dt;
+  holder.position.y=LIFT+PIVOT+y;
+  holder.rotation.set(BASE_TILT+tilt,0,rz*0.12);
+
+  if(state==="shaking"){
+    if(now-lastPress>450) progress=Math.max(0,progress-0.07*dt);
+    if(now-lastPress>1500 && progress<0.02) state="idle";
+  }
+  if(state!=="falling"&&state!=="result"){
+    shown+=(progress-shown)*Math.min(1,dt*14);
+    lead.off=shown*1.25+(now-lastPress<200?rand(0,0.03):0);
+  }
+  sticks.forEach(s=>{ if(s===lead&&fall) return; if(s!==lead) s.off*=Math.pow(0.02,dt); placeStick(s); });
+  if(fall) updateFall(now);
+
+  const rate=rateNow(now), lit=Math.min(6,Math.ceil(rate/1.6));
+  meterBars.forEach((b,i)=>{ b.classList.toggle("on",i<lit); b.classList.toggle("hot",i<lit&&lit>=5); });
+  if(state==="idle") statusEl.textContent= motionOn?"誠心默念，上下搖動手機":"誠心默念所求之事";
+  else if(state==="shaking") statusEl.textContent = progress>0.7?"快出來了…": progress>0.35?"有一支籤冒出來了…":"搖動中…";
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 按鈕／鍵盤 ---------- */
 btn.addEventListener("pointerdown",e=>{ e.preventDefault(); btn.classList.add("pressed"); shake(); });
-["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,()=>{btn.classList.remove("pressed"); ensureAudio();}));
-btn.addEventListener("click",e=>e.preventDefault());
+["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,()=>btn.classList.remove("pressed")));
 addEventListener("keydown",e=>{
   if(e.code==="Space"||e.code==="Enter"){
     if(state==="result"){ if(e.code==="Enter"&&document.activeElement===$("copyBtn"))return; e.preventDefault(); reset(); return; }
@@ -424,21 +482,41 @@ addEventListener("keydown",e=>{
   }
 });
 
-/* 手機搖動（在獨立網頁/未來 App 才有作用；部分內嵌預覽會被擋） */
-let motionAsked=false, lastMag=0, lastMotion=0;
-function askMotion(){
-  if(motionAsked) return; motionAsked=true;
-  try{ if(typeof DeviceMotionEvent!=="undefined" && DeviceMotionEvent.requestPermission){ DeviceMotionEvent.requestPermission().catch(()=>{}); } }catch(e){}
+/* ---------- 搖手機 ----------
+   只在 https 網址（例如 github.io）有作用。
+   iPhone 要先按「開啟搖手機」並允許「動作與方向」；Android 按了就能用。 */
+const motionBtn=$("motionBtn");
+let motionOn=false, gx=0, gy=0, gz=0, armed=true, lastMotion=0, gotMotion=false;
+const isTouch=matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
+if(isTouch && typeof DeviceMotionEvent!=="undefined") motionBtn.classList.add("show");
+function onMotion(e){
+  gotMotion=true; if(!motionOn) return;
+  let x,yy,z; const a=e.acceleration;
+  if(a && a.y!=null){ x=a.x||0; yy=a.y; z=a.z||0; }
+  else{ const g=e.accelerationIncludingGravity; if(!g||g.y==null) return;
+    gx=gx*.85+g.x*.15; gy=gy*.85+g.y*.15; gz=gz*.85+g.z*.15; x=g.x-gx; yy=g.y-gy; z=g.z-gz; }
+  const mag=Math.hypot(x,yy,z), t=performance.now();
+  if(armed && mag>8 && t-lastMotion>130){ lastMotion=t; armed=false; shake(Math.min(1.8,mag/14)); }
+  else if(mag<3.5) armed=true;
 }
-btn.addEventListener("pointerup",askMotion);
-addEventListener("devicemotion",e=>{
-  const a=e.accelerationIncludingGravity; if(!a||a.y==null) return;
-  const mag=Math.abs(a.x||0)+Math.abs(a.y||0)+Math.abs(a.z||0);
-  const jerk=Math.abs(mag-lastMag); lastMag=mag; const t=performance.now();
-  if(jerk>14 && t-lastMotion>110){ lastMotion=t; shake(); }
-});
+async function enableMotion(){
+  unlockAudio();
+  if(motionOn){ motionOn=false; motionBtn.classList.remove("on"); motionBtn.textContent="📱 開啟搖手機"; $("hint").textContent="按一下上下搖一下・按越快搖越快"; return; }
+  try{
+    if(typeof DeviceMotionEvent.requestPermission==="function"){
+      const r=await DeviceMotionEvent.requestPermission();
+      if(r!=="granted") toast("沒有允許動作感應：關掉分頁重開，再按一次選「允許」");
+    }
+  }catch(e){}
+  addEventListener("devicemotion",onMotion);
+  motionOn=true; motionBtn.classList.add("on"); motionBtn.textContent="📱 搖手機中";
+  $("hint").textContent="手機直拿，上下甩動就是搖籤；按鈕也還可以用";
+  gotMotion=false; setTimeout(()=>{ if(motionOn&&!gotMotion) toast("收不到動作感應，請用 Safari 或 Chrome 開啟"); },1500);
+}
+motionBtn.addEventListener("click",enableMotion);
 
-fit(); requestAnimationFrame(loop);
+resize(); requestAnimationFrame(loop);
+window.__debug={get state(){return state}, get motionOn(){return motionOn}};
 </script>
 </body>
 </html>
