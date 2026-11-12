@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>求籤・六十甲子籤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#8e1b16; --red-d:#5a0f0c; --gold:#e7c26b; --gold-d:#b48a35;
+    --paper:#f4e3b5; --ink:#3a1a10;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;
+    color:var(--gold);
+    background:
+      radial-gradient(ellipse 70% 45% at 50% 38%, rgba(255,170,80,.22), transparent 70%),
+      radial-gradient(ellipse at 50% 120%, #2a0705 0%, transparent 60%),
+      linear-gradient(180deg,#4a0b08 0%, #6d1410 45%, #3a0806 100%);
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  /* 香煙 */
+  .smoke{position:fixed;inset:0;pointer-events:none;overflow:hidden;opacity:.5}
+  .smoke i{position:absolute;bottom:-120px;width:180px;height:260px;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(255,240,220,.18),transparent);filter:blur(18px);
+    animation:rise 14s linear infinite}
+  .smoke i:nth-child(1){left:8%;animation-delay:0s}
+  .smoke i:nth-child(2){left:62%;animation-delay:-5s;animation-duration:17s}
+  .smoke i:nth-child(3){left:35%;animation-delay:-10s;animation-duration:20s}
+  @keyframes rise{0%{transform:translateY(0) scale(.7);opacity:0}15%{opacity:1}100%{transform:translateY(-120vh) translateX(40px) scale(1.6);opacity:0}}
+
+  header{position:relative;width:100%;max-width:520px;text-align:center;padding:max(14px,env(safe-area-inset-top)) 16px 0}
+  h1{margin:6px 0 0;font-weight:900;font-size:30px;letter-spacing:.5em;text-indent:.5em;
+     color:var(--gold);text-shadow:0 2px 0 #3a0705,0 0 18px rgba(231,194,107,.35)}
+  .sub{font-size:13px;letter-spacing:.3em;opacity:.75;margin-top:2px}
+  .mute{position:absolute;right:14px;top:max(14px,env(safe-area-inset-top));width:36px;height:36px;border-radius:50%;
+        border:1px solid rgba(231,194,107,.5);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;cursor:pointer}
+
+  .stageWrap{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
+  .stage{position:relative;width:320px;height:460px;transform-origin:center center}
+  .floor{position:absolute;left:-20px;right:-20px;bottom:6px;height:40px;border-radius:50%;
+         background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent)}
+
+  .holder{position:absolute;left:85px;top:36px;width:150px;height:404px;transform-origin:50% 96%;will-change:transform}
+  .rimBack{position:absolute;left:0;top:114px;width:150px;height:40px}
+  .sticks{position:absolute;left:15px;top:0;width:120px;height:190px}
+  .stick{position:absolute;bottom:0;width:9px;border-radius:3px 3px 1px 1px;
+    background:linear-gradient(90deg,#c9a062,#ecd29b 45%,#d3ad6c);
+    box-shadow:inset -1px 0 0 rgba(0,0,0,.15);
+    transform-origin:50% 100%;transition:transform 70ms linear}
+  .stick::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:3px 3px 0 0;
+    background:linear-gradient(90deg,#9b1c14,#c8342a 50%,#9b1c14)}
+  .stick.lead{z-index:5;transition:transform 90ms ease-out}
+  .tube{position:absolute;left:0;top:114px;width:150px;height:288px;filter:drop-shadow(0 10px 12px rgba(0,0,0,.45))}
+
+  .fallen{position:absolute;width:9px;border-radius:3px;z-index:20;
+    background:linear-gradient(90deg,#c9a062,#ecd29b 45%,#d3ad6c);box-shadow:0 3px 6px rgba(0,0,0,.4)}
+  .fallen::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-radius:3px 3px 0 0;background:#b52a20}
+
+  .controls{width:100%;max-width:520px;padding:0 16px max(18px,env(safe-area-inset-bottom));text-align:center}
+  .status{height:22px;font-size:15px;letter-spacing:.12em;margin-bottom:10px;opacity:.9}
+  .meter{display:flex;gap:5px;justify-content:center;margin-bottom:14px;height:8px}
+  .meter b{width:22px;height:6px;border-radius:3px;background:rgba(231,194,107,.18);transition:background .12s}
+  .meter b.on{background:var(--gold);box-shadow:0 0 8px rgba(231,194,107,.7)}
+  .meter b.on.hot{background:#ff9a4a;box-shadow:0 0 10px rgba(255,140,60,.9)}
+  .shakeBtn{
+    width:112px;height:112px;border-radius:50%;cursor:pointer;touch-action:manipulation;
+    font-family:inherit;font-weight:900;font-size:40px;color:#fff3cf;letter-spacing:0;
+    background:radial-gradient(circle at 35% 30%,#d8452f,#9e1d15 60%,#6a0f0b);
+    border:4px solid var(--gold);box-shadow:0 0 0 6px rgba(231,194,107,.18),0 10px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3);
+    transition:transform 60ms;
+  }
+  .shakeBtn:active,.shakeBtn.pressed{transform:scale(.92)}
+  .shakeBtn:disabled{filter:grayscale(.5) brightness(.7);cursor:default}
+  .hint{font-size:12px;opacity:.6;margin-top:10px;letter-spacing:.1em}
+
+  /* 籤詩 */
+  .overlay{position:fixed;inset:0;background:rgba(20,3,2,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+  .overlay.show{display:flex;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .card{
+    position:relative;width:min(340px,100%);max-height:calc(100vh - 36px);overflow:auto;
+    background:
+      radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.35),transparent 60%),
+      linear-gradient(180deg,#f7e8bd,#efd89c);
+    color:var(--ink);border-radius:6px;padding:16px 16px 14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+    animation:pop .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes pop{from{transform:scale(.6) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+  .frame{border:2px solid #a8261c;outline:1px solid #a8261c;outline-offset:3px;padding:14px 12px 12px;margin:4px}
+  .cardTop{text-align:center;color:#a8261c;font-size:13px;letter-spacing:.4em;text-indent:.4em}
+  .num{text-align:center;color:#a8261c;font-weight:900;font-size:32px;letter-spacing:.15em;text-indent:.15em;margin:4px 0 2px}
+  .gz{display:block;width:fit-content;margin:4px auto 12px;border:1.5px solid #a8261c;color:#a8261c;
+      padding:2px 12px;font-weight:700;font-size:18px;letter-spacing:.3em;text-indent:.3em}
+  .poem{writing-mode:vertical-rl;margin:0 auto;height:228px;font-size:24px;font-weight:700;
+        line-height:2.1;letter-spacing:.18em;display:block;width:fit-content;color:#2b130b}
+  .poem span{display:block}
+  .note{font-size:11px;color:#7a5a3a;text-align:center;margin-top:10px;line-height:1.5}
+  .actions{display:flex;gap:10px;margin-top:12px}
+  .actions button{flex:1;padding:11px 0;border-radius:6px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.15em}
+  .again{background:#9e1d15;color:#fff3cf;border:2px solid #7a140f}
+  .copy{background:transparent;color:#9e1d15;border:2px solid #9e1d15}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;
+         padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;z-index:60;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="smoke"><i></i><i></i><i></i></div>
+
+<header>
+  <h1>求籤</h1>
+  <div class="sub">六十甲子籤</div>
+  <button class="mute" id="mute" aria-label="聲音開關">🔊</button>
+</header>
+
+<div class="stageWrap" id="stageWrap">
+  <div class="stage" id="stage">
+    <div class="floor"></div>
+    <div class="holder" id="holder">
+      <svg class="rimBack" viewBox="0 0 150 40" aria-hidden="true">
+        <ellipse cx="75" cy="20" rx="74" ry="19" fill="#2a1508" stroke="#7a5326" stroke-width="2"/>
+      </svg>
+      <div class="sticks" id="sticks"></div>
+      <svg class="tube" viewBox="0 0 150 288" aria-hidden="true">
+        <defs>
+          <linearGradient id="bamboo" x1="0" x2="1">
+            <stop offset="0" stop-color="#6b4518"/>
+            <stop offset=".18" stop-color="#a87632"/>
+            <stop offset=".42" stop-color="#d9ab5c"/>
+            <stop offset=".6" stop-color="#c08a3c"/>
+            <stop offset="1" stop-color="#5c3a12"/>
+          </linearGradient>
+          <linearGradient id="band" x1="0" x2="1">
+            <stop offset="0" stop-color="#3c250a"/>
+            <stop offset=".45" stop-color="#7a5320"/>
+            <stop offset="1" stop-color="#2e1c07"/>
+          </linearGradient>
+        </defs>
+        <path d="M1,20 A74,19 0 0 0 149,20 L149,274 A74,13 0 0 1 1,274 Z" fill="url(#bamboo)"/>
+        <path d="M1,20 A74,19 0 0 0 149,20" fill="none" stroke="#e2bb72" stroke-width="3"/>
+        <path d="M1,102 A74,16 0 0 0 149,102 L149,110 A74,16 0 0 1 1,110 Z" fill="url(#band)" opacity=".85"/>
+        <path d="M1,212 A74,14 0 0 0 149,212 L149,220 A74,14 0 0 1 1,220 Z" fill="url(#band)" opacity=".85"/>
+        <!-- 紅紙標籤 -->
+        <rect x="52" y="130" width="46" height="74" rx="2" fill="#b3261e" stroke="#e7c26b" stroke-width="1.5"/>
+        <text x="75" y="160" text-anchor="middle" font-size="22" font-weight="900" fill="#f6dc8f" font-family="Noto Serif TC,serif">靈</text>
+        <text x="75" y="190" text-anchor="middle" font-size="22" font-weight="900" fill="#f6dc8f" font-family="Noto Serif TC,serif">籤</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="status" id="status">誠心默念所求之事</div>
+  <div class="meter" id="meter"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+  <button class="shakeBtn" id="shakeBtn" aria-label="搖一下">搖</button>
+  <div class="hint">按一下上下搖一下・按越快搖越快・空白鍵也可以</div>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="card">
+    <div class="frame">
+      <div class="cardTop">六十甲子籤</div>
+      <div class="num" id="rNum">第一籤</div>
+      <span class="gz" id="rGz">甲子</span>
+      <div class="poem" id="rPoem"></div>
+    </div>
+    <div class="note">各廟宇籤詩文字略有出入，僅供參考。<br>傳統上抽到籤後，可再擲筊確認是否為此籤。</div>
+    <div class="actions">
+      <button class="copy" id="copyBtn">複製籤詩</button>
+      <button class="again" id="againBtn">再求一籤</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 六十甲子籤詩 ---------- */
+const POEMS = [
+"日出便見風雲散，光明清淨照世間，一向前途通大道，萬事清吉保平安",
+"於今此景正當時，看看欲吐百花魁，若能遇得春色到，一洒清吉脫塵埃",
+"勸君把定心莫虛，天註衣祿自有餘，和合重重常吉慶，時來終遇得明珠",
+"風恬浪靜可行舟，恰是中秋月一輪，凡事不須多憂慮，福祿自有慶家門",
+"只恐前途命有變，勸君作急可宜先，且守長江無大事，命逢太白守身邊",
+"風雲致雨落洋洋，天災時氣必有傷，命內此事難和合，更逢一足出外鄉",
+"雲開月出正分明，不須進退問前程，婚姻皆由天註定，和合清吉萬事成",
+"禾稻看看結成完，此事必定兩相全，回到家中寬心坐，妻兒鼓舞樂團圓",
+"龍虎相隨在深山，君爾何須背後看，不知此去相愛悞，他日與我卻無干",
+"花開結子一半枯，可惜今年汝虛度，漸漸日落西山去，勸君不用向前途",
+"靈雞漸漸見分明，凡事且看子丑寅，雲開月出照天下，郎君即便見太平",
+"長江風浪漸漸靜，于今得進可安寧，必有貴人相扶助，凶事脫出見太平",
+"命中正逢羅孛關，用盡心機總未休，作福問神難得過，恰是行舟上高灘",
+"財中漸漸見分明，花開花謝結子成，寬心且看月中桂，郎君即便見太平",
+"八十原來是太公，看看晚景遇文王，目下緊事休相問，勸君且守待運通",
+"不須作福不須求，用盡心機總未休，陽世不知陰世事，官法如爐不自由",
+"舊恨重重未改為，家中禍患不臨身，須當謹防宜作福，龍蛇交會得和合",
+"君問中間此言因，看看祿馬拱前程，若得貴人多得利，和合自有兩分明",
+"富貴由命天註定，心高必然誤君期，不然且回依舊路，雲開月出自分明",
+"前途功名未得意，只恐命內有交加，兩家必定防損失，勸君且退莫咨嗟",
+"十方佛法有靈通，大難禍患不相同，紅日當空常照耀，還有貴人到家堂",
+"太公家業八十成，月出光輝四海明，命內自然逢大吉，茅屋中間百事亨",
+"欲去長江水闊茫，前途未遂運未通，如今絲綸常在手，只恐魚水不相逢",
+"月出光輝四海明，前途祿位見太平，浮雲掃退終無事，可保禍患不臨身",
+"總是前途莫心勞，求神問聖枉是多，但看雞犬日過後，不須作福事如何",
+"選出牡丹第一枝，勸君折取莫遲疑，世間若問相知處，萬事逢春正及時",
+"君爾寬心且自由，門庭清吉家無憂，財寶自然終吉利，凡事無傷不用求",
+"於今莫作此當時，虎落平陽被犬欺，世間凡事何難定，千山萬水也遲疑",
+"枯木可惜未逢春，如今返在暗中藏，寬心且守風霜退，還君依舊作乾坤",
+"漸漸看此月中和，過後須防未得高，改變顏色前途去，凡事必定見重勞",
+"綠柳蒼蒼正當時，任君此去作乾坤，花果結實無殘謝，福祿自有慶家門",
+"龍虎相交在門前，此事必定兩相連，黃金忽然變成鐵，何用作福問神仙",
+"欲去長江水闊茫，行舟把定未遭風，戶內用心再作福，看看魚水得相逢",
+"危險高山行過盡，莫嫌此路有重重，若見蘭桂漸漸發，長蛇反轉變成龍",
+"此事何須用心機，前途變怪自然知，看看此去得和合，漸漸脫出見太平",
+"福如東海壽如山，君爾何須嘆苦難，命內自然逢大吉，祈保分明自平安",
+"運逢得意身顯變，君爾身中皆有益，一向前途無難事，決意之中保清吉",
+"名顯有意在中央，不須祈禱心自安，看看早晚日過後，即時得意在其間",
+"意中若問神仙路，勸爾且退望高樓，寬心且守寬心坐，必然遇得貴人扶",
+"平生富貴成祿位，君家門戶定光輝，此中必定無損失，夫妻百歲喜相隨",
+"今行到手實難推，歌歌暢飲自徘徊，雞犬相聞消息近，婚姻夙世結成雙",
+"一重江水一重山，誰知此去路又難，任他改求終不過，是非終久未得安",
+"一年作事急如飛，君爾寬心莫遲疑，貴人還在千里外，音信月中漸漸知",
+"客到前途多得利，君爾何故兩相疑，雖是中間逢進退，月出光輝得運時",
+"花開今已結成果，富貴榮華終到老，君子小人相會合，萬事清吉莫煩惱",
+"功名得意與君顯，前途富貴喜安然，若遇一輪明月照，十五團圓照滿天",
+"君爾何須問聖跡，自己心中皆有益，於今且看月中旬，凶事脫出化成吉",
+"陽世作事未和同，雲遮月色正朦朧，心中意欲前途去，只恐命內運未通",
+"言語雖多不可從，風雲靜處未行龍，暗中終得明消息，君爾何須問重重",
+"佛前發誓無異心，且看前途得好音，此物原來本是鐵，也能變化得成金",
+"東西南北不堪行，前途此事正可當，勸君把定莫煩惱，家門自有保安康",
+"功名事業本由天，不須掛念意懸懸，若問中間遲與速，風雲際會在眼前",
+"看君來問心中事，積善之家慶有餘，運亨財子雙雙至，指日喜氣溢門閭",
+"孤燈寂寂夜沉沉，萬事清吉萬事成，若逢陰中有善果，燒得好香達神明",
+"須知進退總虛言，看看發暗未必全，珠玉深藏還未變，心中但得枉徒然",
+"病中若得苦心勞，到底完全總未遭，去後不須回頭問，心中事務盡消磨",
+"勸君把定心莫虛，前途清吉得運時，到底中間無大事，又遇神仙守安居",
+"蛇身意欲變成龍，只恐命內運未通，久病且作寬心坐，言語雖多不可從",
+"有心作福莫遲疑，求名清吉正當時，此事必能成會合，財寶自然喜相隨",
+"月出光輝本清吉，浮雲總是蔽陰色，戶內用心再作福，當官分理便有益"
+];
+const STEMS="甲乙丙丁戊己庚辛壬癸", EVEN="子寅辰午申戌", ODD="丑卯巳未酉亥";
+const GANZHI=[]; for(let s=0;s<10;s++){const b=s%2?ODD:EVEN; for(const c of b) GANZHI.push(STEMS[s]+c);}
+function cnNum(n){const d="〇一二三四五六七八九"; if(n<10)return d[n]; const t=Math.floor(n/10),o=n%10;
+  return (t===1?"":d[t])+"十"+(o?d[o]:"");}
+
+/* ---------- 元素 ---------- */
+const $=id=>document.getElementById(id);
+const holder=$("holder"), sticksEl=$("sticks"), stage=$("stage"), btn=$("shakeBtn"),
+      statusEl=$("status"), meterBars=[...$("meter").children], overlay=$("overlay");
+
+/* ---------- 舞台縮放 ---------- */
+let scale=1;
+function fit(){
+  const wrap=$("stageWrap"); const h=wrap.clientHeight, w=wrap.clientWidth;
+  scale=Math.min(1.15, h/470, w/340); stage.style.transform=`scale(${scale})`;
+}
+addEventListener("resize",fit);
+
+/* ---------- 竹籤 ---------- */
+const N=28, sticks=[];
+const rand=(a,b)=>a+Math.random()*(b-a);
+for(let i=0;i<N;i++){
+  const el=document.createElement("div"); el.className="stick";
+  const x=6+i*(104/(N-1))+rand(-2,2), h=rand(150,174), r=(x-57)/57*7+rand(-1.5,1.5);
+  el.style.left=x+"px"; el.style.height=h+"px"; el.style.zIndex=Math.floor(rand(1,4));
+  sticksEl.appendChild(el);
+  sticks.push({el,x,h,r,off:0});
+}
+function drawStick(s){ s.el.style.transform=`translateX(-50%) rotate(${s.r}deg) translateY(${-s.off}px)`; }
+sticks.forEach(drawStick);
+
+let lead=null;
+function pickLead(){ lead=sticks[Math.floor(rand(8,20))]; sticks.forEach(s=>s.el.classList.remove("lead")); lead.el.classList.add("lead"); }
+pickLead();
+
+/* ---------- 聲音 ---------- */
+let ac=null, noiseBuf=null, muted=false;
+function ensureAudio(){
+  try{
+    if(!ac){ ac=new (window.AudioContext||window.webkitAudioContext)();
+      noiseBuf=ac.createBuffer(1,ac.sampleRate*0.08,ac.sampleRate);
+      const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
+    if(ac.state==="suspended") ac.resume().catch(()=>{});
+  }catch(e){ ac=null; }
+}
+function clack(t,freq,vol){
+  if(!ac||muted) return;
+  const src=ac.createBufferSource(); src.buffer=noiseBuf;
+  const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=freq; bp.Q.value=7;
+  const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+  src.connect(bp).connect(g).connect(ac.destination); src.start(t); src.stop(t+0.07);
+  const o=ac.createOscillator(); o.type="triangle"; o.frequency.value=freq*0.42;
+  const g2=ac.createGain(); g2.gain.setValueAtTime(vol*0.35,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.035);
+  o.connect(g2).connect(ac.destination); o.start(t); o.stop(t+0.05);
+}
+function shakeSound(rate){
+  if(!ac) return; const now=ac.currentTime, n=3+Math.floor(Math.random()*3)+Math.min(4,rate|0);
+  for(let i=0;i<n;i++) clack(now+Math.random()*0.13, rand(1700,3400), rand(.25,.55));
+}
+$("mute").addEventListener("click",()=>{ muted=!muted; $("mute").textContent=muted?"🔇":"🔊"; });
+
+/* ---------- 物理 ---------- */
+const BASE=26;            // 第一人稱：籤筒往前（遠離自己）傾斜的角度
+let ang=0, vel=0, y=0, vy=0, rz=0, vrz=0;
+let progress=0, shown=0, lastPress=0, presses=[];
+let state="idle";         // idle | shaking | falling | result
+
+function rateNow(t){ presses=presses.filter(p=>t-p<1000); return presses.length; }
+
+function shake(){
+  if(state==="falling"||state==="result") return;
+  ensureAudio();
+  const t=performance.now(); presses.push(t); lastPress=t;
+  const rate=rateNow(t);
+  state="shaking";
+  // 上下搖：往下一頓＋往前一點頭，再彈回來
+  vy  += 300+38*Math.min(rate,9);
+  vel += 110+16*Math.min(rate,9);
+  vrz += rand(-25,25);
+  // 越快越容易冒出來
+  progress += (0.03 + 0.0065*Math.min(rate,10)) * rand(.6,1.4);
+  // 其他竹籤跳動
+  sticks.forEach(s=>{ if(s!==lead){ s.off=Math.random()<.5?rand(0,5+rate*1.6):0; drawStick(s);} });
+  shakeSound(rate);
+  try{ navigator.vibrate&&navigator.vibrate(8);}catch(e){}
+  if(progress>=1){ progress=1; drop(); }
+}
+
+let lastT=performance.now();
+function loop(t){
+  const dt=Math.min(0.04,(t-lastT)/1000); lastT=t;
+  // 彈簧
+  const acc=-280*ang-11*vel; vel+=acc*dt; ang+=vel*dt; ang=Math.max(-12,Math.min(22,ang));
+  const ay=-340*y-13*vy; vy+=ay*dt; y+=vy*dt; y=Math.max(-30,Math.min(40,y));
+  const az=-200*rz-12*vrz; vrz+=az*dt; rz+=vrz*dt;
+  holder.style.transform=`translateY(${y}px) perspective(760px) rotateX(${BASE+ang}deg) rotateZ(${rz}deg)`;
+
+  if(state==="shaking"){
+    if(t-lastPress>450) progress=Math.max(0,progress-0.07*dt);   // 停下來會慢慢縮回去
+    if(t-lastPress>1500 && progress<0.02) state="idle";
+  }
+  // 領頭竹籤
+  if(state!=="falling" && state!=="result"){
+    shown += (progress-shown)*Math.min(1,dt*14);
+    lead.off = shown*118 + (t-lastPress<200? rand(0,4):0);
+    drawStick(lead);
+  }
+  // 速度表與狀態
+  const rate=rateNow(t), lit=Math.min(6,Math.ceil(rate/1.6));
+  meterBars.forEach((b,i)=>{ b.classList.toggle("on",i<lit); b.classList.toggle("hot",i<lit&&lit>=5); });
+  if(state==="idle") statusEl.textContent="誠心默念所求之事";
+  else if(state==="shaking") statusEl.textContent = progress>0.7?"快出來了…": progress>0.35?"有一支籤冒出來了…":"搖動中…";
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 掉籤 ---------- */
+let fallen=null, resultNo=1;
+function drop(){
+  state="falling"; btn.disabled=true; statusEl.textContent="籤落！";
+  resultNo = 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 60);
+
+  const sr=stage.getBoundingClientRect(), lr=lead.el.getBoundingClientRect();
+  const cx=(lr.left+lr.width/2-sr.left)/scale, cy=(lr.top+lr.height/2-sr.top)/scale;
+  const h=Math.max(90,lr.height/scale), w=9, a0=rz+lead.r;
+  lead.el.style.visibility="hidden";
+
+  fallen=document.createElement("div"); fallen.className="fallen";
+  fallen.style.height=h+"px"; fallen.style.left=(cx-w/2)+"px"; fallen.style.top=(cy-h/2)+"px";
+  stage.appendChild(fallen);
+  const landX=250, landY=440-w/2, dx=landX-cx, dy=landY-cy;
+  const anim=fallen.animate([
+    {transform:`translate(0,0) rotate(${a0}deg)`},
+    {transform:`translate(${dx*0.15}px,${-100}px) rotate(${a0+35}deg)`, offset:.28},
+    {transform:`translate(${dx}px,${dy}px) rotate(92deg)`, offset:.7, easing:"ease-out"},
+    {transform:`translate(${dx+4}px,${dy-16}px) rotate(84deg)`, offset:.82},
+    {transform:`translate(${dx+6}px,${dy}px) rotate(90deg)`}
+  ],{duration:820,easing:"cubic-bezier(.3,.1,.6,1)",fill:"forwards"});
+  vy -= 200; vel -= 80; // 籤筒反彈
+  if(ac&&!muted){ const n=ac.currentTime; clack(n+0.57,1100,.7); clack(n+0.67,1300,.45); clack(n+0.8,1200,.3); }
+  try{ navigator.vibrate&&navigator.vibrate([0,560,30,80,20]);}catch(e){}
+  anim.onfinish=()=>setTimeout(showResult,380);
+}
+
+function showResult(){
+  state="result";
+  $("rNum").textContent="第"+cnNum(resultNo)+"籤";
+  $("rGz").textContent=GANZHI[resultNo-1];
+  $("rPoem").innerHTML=POEMS[resultNo-1].split("，").map(l=>`<span>${l}</span>`).join("");
+  overlay.classList.add("show");
+  $("againBtn").focus();
+}
+
+function reset(){
+  overlay.classList.remove("show");
+  if(fallen){ fallen.remove(); fallen=null; }
+  lead.el.style.visibility=""; progress=0; shown=0; lead.off=0; drawStick(lead);
+  pickLead(); presses=[]; state="idle"; btn.disabled=false;
+}
+$("againBtn").addEventListener("click",reset);
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1400); }
+$("copyBtn").addEventListener("click",()=>{
+  const txt=`六十甲子籤 第${cnNum(resultNo)}籤（${GANZHI[resultNo-1]}）\n`+POEMS[resultNo-1].split("，").join("\n");
+  const fallback=()=>{ const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");toast("已複製");}catch(e){toast("無法複製");} ta.remove(); };
+  try{ navigator.clipboard.writeText(txt).then(()=>toast("已複製"),fallback); }catch(e){ fallback(); }
+});
+
+/* ---------- 輸入 ---------- */
+btn.addEventListener("pointerdown",e=>{ e.preventDefault(); btn.classList.add("pressed"); shake(); });
+["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,()=>{btn.classList.remove("pressed"); ensureAudio();}));
+btn.addEventListener("click",e=>e.preventDefault());
+addEventListener("keydown",e=>{
+  if(e.code==="Space"||e.code==="Enter"){
+    if(state==="result"){ if(e.code==="Enter"&&document.activeElement===$("copyBtn"))return; e.preventDefault(); reset(); return; }
+    if(e.repeat) return; e.preventDefault(); shake();
+  }
+});
+
+/* 手機搖動（在獨立網頁/未來 App 才有作用；部分內嵌預覽會被擋） */
+let motionAsked=false, lastMag=0, lastMotion=0;
+function askMotion(){
+  if(motionAsked) return; motionAsked=true;
+  try{ if(typeof DeviceMotionEvent!=="undefined" && DeviceMotionEvent.requestPermission){ DeviceMotionEvent.requestPermission().catch(()=>{}); } }catch(e){}
+}
+btn.addEventListener("pointerup",askMotion);
+addEventListener("devicemotion",e=>{
+  const a=e.accelerationIncludingGravity; if(!a||a.y==null) return;
+  const mag=Math.abs(a.x||0)+Math.abs(a.y||0)+Math.abs(a.z||0);
+  const jerk=Math.abs(mag-lastMag); lastMag=mag; const t=performance.now();
+  if(jerk>14 && t-lastMotion>110){ lastMotion=t; shake(); }
+});
+
+fit(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>
